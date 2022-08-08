@@ -1,0 +1,86 @@
+package com.mosambee.service;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import javax.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.mosambee.onboarding.dao.MidOnboardingDao;
+import com.mosambee.onboarding.util.BeanValidation;
+import com.mosambee.onboarding.util.RequestValidator1;
+import com.mosambee.response.MerchantResponseField;
+import com.mosambee.response.MerchatResponse;
+import lombok.extern.log4j.Log4j2;
+
+/**
+ * <p>Read HTTP body from the HttpServletRequest and store for re-use.</p> 
+ * 
+ * @author sazzad.alom
+ * @since 1.0.0
+ */
+
+@Log4j2
+@Service
+@Valid
+public class MidOnboardingServiceImpl implements MidOnboardingService {
+
+	@Autowired
+	private RequestValidator1 validator1;
+	@Autowired
+	private MidOnboardingDao midOnboardingDao;
+
+	@Override
+	public MerchatResponse addMerchantId(MidOnboardingDetails midOnboardingDetails) {
+
+		List<MerchantResponseField> fields = new ArrayList<>();
+	
+			int size = midOnboardingDetails.midDetails.size();		
+
+		 log.debug("MyServiceImpl/Service/SizeIs: {}", size);
+
+		Iterator<@Valid CustomRequestDetails> itr = midOnboardingDetails.midDetails.iterator();
+		CustomRequestDetails c = new CustomRequestDetails();
+
+		while (itr.hasNext()) {
+			CustomRequestDetails crd = itr.next();
+			c.setMerchantRefId(crd.getMerchantRefId());
+			c.setMerchantCode(crd.getMerchantCode());
+			c.setAcquirer(crd.getAcquirer());
+			c.setTg(crd.getTg());
+			c.setInstrument(crd.getInstrument());
+			log.debug("MyServiceImpl/Service/DataIs: {}", c);
+
+			String beanValidator = BeanValidation.getBeanValidator(c);
+
+			if ("success".equalsIgnoreCase(beanValidator)) {
+				
+				MerchantResponseField response = midOnboardingDao.addDetails(c);
+				fields.add(response); 
+				log.debug("MyServiceImpl/Service: {}", fields);
+//				fields.add(MerchantResponseField.builder().result("Success").responseCode("00")
+//						.message("merchant code configured successfully. ").midRefId("45636").build());
+			} else {
+				fields.add(MerchantResponseField.builder().result("failed").responseCode("00").message(beanValidator)
+						.midRefId("45636").build());
+				log.debug("MyServiceImpl/Service: {}", fields);
+			}
+
+			/*
+			 * if (validator1.validate(c)) {
+			 * 
+			 * MerchantResponseField response = midOnboardingDao.addDetails(c);
+			 * fields.add(response); log.debug("MyServiceImpl/Service: {}", fields);
+			 * 
+			 * } else {
+			 * 
+			 * fields.add(
+			 * MerchantResponseField.builder().result("failed").responseCode("00")
+			 * .message("Validatoin is Failed").midRefId("45636").build());
+			 * 
+			 * log.debug("MyServiceImpl/Service: {}", fields); }
+			 */
+		}
+		return MerchatResponse.builder().midDetails(fields).build();
+	}
+}
