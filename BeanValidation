@@ -1,0 +1,58 @@
+package com.mosambee.onboarding.util;
+
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+import com.mosambee.service.CustomRequestDetails;
+import lombok.extern.log4j.Log4j2;
+
+/**
+ * <p>Read HTTP body from the HttpServletRequest and valid one bye one.</p> 
+ * 
+ * @author sazzad.alom 
+ * @since 1.0.0
+ */
+
+@Log4j2
+public class BeanValidation {
+
+	private BeanValidation() {}
+
+	public static String getBeanValidator(CustomRequestDetails customRequestDetails) {
+
+		StringBuilder stringBuilder = new StringBuilder();
+		
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		Validator validator = factory.getValidator();
+		Set<ConstraintViolation<CustomRequestDetails>> validatefield = validator.validate(customRequestDetails);
+
+		if(!validatefield.isEmpty()) {
+
+			for (ConstraintViolation<CustomRequestDetails> violation : validatefield) {
+				
+				 // stringBuilder.append(violation.toString()); 
+					
+				  stringBuilder.append(violation.getMessage()); 
+				  stringBuilder.append(" ");
+				 
+				//stringBuilder.append(violation.getMessageTemplate());
+
+				log.error(stringBuilder);
+			}
+
+			return stringBuilder.toString();
+		}
+
+		/*
+		 * List<MerchantResponseField> fields = new ArrayList<>();
+		 * 
+		 * fields.add(MerchantResponseField.builder().result("failed").responseCode("00"
+		 * ).message(stringBuilder.toString()) .midRefId("45636").build());
+		 * log.debug("MyServiceImpl/Service: {}", fields);
+		 */
+		return "success";
+
+	}
+}
